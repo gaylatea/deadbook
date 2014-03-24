@@ -25,6 +25,20 @@ func (uc *UpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	// Figure out which region this instance is in, if we have one.
+	// Do some sanity-checking on the arguments we're given.
+	var realRegion string
+
+	metadataRegion, err := aws.GetMetaData("placement/availability-zone")
+	if err != nil {
+		uc.Ui.Error(err.Error())
+		realRegion = ""
+	} else {
+		// Gotta take out the last character of the AZ for the proper
+		// region name.
+		realRegion = string(metadataRegion[:(len(metadataRegion) - 1)])
+	}
+
 	// We'll iterate through all the regions. You need to keep DNS names
 	// unique across EC2 for this to work properly.
 	for regionName, region := range aws.Regions {
@@ -51,8 +65,14 @@ func (uc *UpdateCommand) Run(args []string) int {
 					instanceTags[tag.Key] = tag.Value
 				}
 
-				regionHostEntries[instance.PrivateIpAddress] = []string{
-					instanceTags["dns"], instance.InstanceId}
+				ipAddress := ""
+				if realRegion == regionName {
+					ipAddress = instance.PrivateIpAddress
+				} else {
+					ipAddress = instance.PublicIpAddress
+				}
+
+				regionHostEntries[ipAddress] = []string{instanceTags["dns"], instance.InstanceId}
 			}
 		}
 
