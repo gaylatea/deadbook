@@ -42,7 +42,7 @@ func (uc *UpdateCommand) Run(args []string) int {
 	// We'll iterate through all the regions. You need to keep DNS names
 	// unique across EC2 for this to work properly.
 	for regionName, region := range aws.Regions {
-		regionFileName := fmt.Sprintf("hosts-%s", regionName)
+		regionFileName := fmt.Sprintf("/etc/hosts.d/hosts-%s", regionName)
 
 		o := fmt.Sprintf("Updating with information from EC2 region %s", regionName)
 		uc.Ui.Info(o)
